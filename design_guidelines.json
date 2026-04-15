@@ -1,0 +1,119 @@
+{
+  "theme": "Light Theme",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "vibe": "Objective, rigid, functional, authoritative",
+  "app_type": "dashboard",
+  "colors": {
+    "primary": "#111111",
+    "secondary": "#E5E5E5",
+    "background": "#FFFFFF",
+    "surface": "#F7F7F7",
+    "border": "#111111",
+    "text": {
+      "primary": "#111111",
+      "secondary": "#555555",
+      "muted": "#888888"
+    },
+    "accents": {
+      "error": "#E53E3E",
+      "success": "#38A169",
+      "warning": "#D69E2E",
+      "info": "#3182CE",
+      "klein_blue": "#002FA7"
+    }
+  },
+  "typography": {
+    "headings": {
+      "family": "'Chivo', sans-serif",
+      "weights": "700, 900",
+      "style": "uppercase tracking-tight"
+    },
+    "body": {
+      "family": "'IBM Plex Sans', sans-serif",
+      "weights": "400, 500, 600"
+    },
+    "mono": {
+      "family": "'IBM Plex Mono', monospace"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter leading-none",
+      "h2": "text-3xl sm:text-4xl tracking-tight leading-none",
+      "h3": "text-2xl sm:text-3xl tracking-tight",
+      "h4": "text-xl font-bold uppercase tracking-wide",
+      "body": "text-base leading-relaxed text-[#111111]",
+      "small": "text-sm tracking-wide text-[#555555]",
+      "overline": "text-xs font-bold uppercase tracking-[0.2em] text-[#555555]"
+    }
+  },
+  "layout_and_spacing": {
+    "strategy": "The 'Control Room' Grid",
+    "grid": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "padding": "p-6 or p-8 for major containers",
+    "borders": "border-collapse style layout, 1px solid #111111 for all card boundaries",
+    "alignment": "Strict left-alignment for all data. Asymmetric tension.",
+    "radius": "rounded-none (0px) strictly everywhere. No soft corners."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#111111] text-white hover:bg-[#333333] border border-[#111111] transition-all duration-150 rounded-none shadow-[4px_4px_0_0_#E53E3E]",
+      "secondary": "bg-transparent text-[#111111] border border-[#111111] hover:bg-[#F7F7F7] transition-all duration-150 rounded-none",
+      "ghost": "bg-transparent text-[#555555] hover:text-[#111111] hover:bg-[#F7F7F7] rounded-none"
+    },
+    "cards": {
+      "default": "bg-white border border-[#111111] rounded-none p-6 shadow-none",
+      "hover_state": "-translate-y-1 shadow-[4px_4px_0_0_#111111] transition-transform duration-200"
+    },
+    "inputs": {
+      "default": "rounded-none border border-[#111111] bg-white text-[#111111] focus:ring-0 focus:outline-none focus:border-[#E53E3E]"
+    },
+    "tables": {
+      "style": "w-full border-collapse text-left",
+      "header": "border-b-2 border-[#111111] uppercase text-xs tracking-[0.1em] font-bold text-[#555555] py-4",
+      "row": "border-b border-[#E5E5E5] hover:bg-[#F7F7F7] transition-colors",
+      "cell": "py-4 text-sm"
+    },
+    "sidebar": {
+      "style": "bg-[#F7F7F7] border-r border-[#111111] min-h-screen",
+      "link_active": "bg-[#111111] text-white font-bold",
+      "link_inactive": "text-[#555555] hover:text-[#111111] hover:bg-[#E5E5E5]"
+    }
+  },
+  "media": {
+    "images": [
+      {
+        "category": "hero_auth_background",
+        "url": "https://static.prod-images.emergentagent.com/jobs/c8ad94d6-53f0-4077-b427-2df00e8491ad/images/f072af17c0178b539b632be015626eec230db55cb416a44a68dd44ceb30cc095.png",
+        "description": "Brutalist architectural background for login/registration pages."
+      },
+      {
+        "category": "logo_main",
+        "url": "https://static.prod-images.emergentagent.com/jobs/c8ad94d6-53f0-4077-b427-2df00e8491ad/images/d9c7b11f07c7154d6a33ea4ec7108159661f5f199b6ab393e558783470f482eb.png",
+        "description": "NEMS official geometric emblem logo."
+      },
+      {
+        "category": "empty_state_students",
+        "url": "https://images.unsplash.com/photo-1758270704025-0e1a1793e1ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2ODl8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMHRha2luZyUyMGV4YW18ZW58MHx8fHwxNzc2MjYxODM2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Students taking exams for empty states or dashboard greetings."
+      },
+      {
+        "category": "dashboard_header_building",
+        "url": "https://images.unsplash.com/photo-1662728132385-11fee9b3db9e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NDh8MHwxfHNlYXJjaHwxfHxnb3Zlcm5tZW50JTIwYnVpbGRpbmclMjBhcmNoaXRlY3R1cmV8ZW58MHx8fHwxNzc2MjYxODM2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Government building architectural shot for the admin overview header."
+      }
+    ]
+  },
+  "icons_and_libraries": {
+    "icons": "yarn add @phosphor-icons/react",
+    "motion": "yarn add framer-motion (for micro-interactions and route transitions)",
+    "charts": "yarn add recharts (for evaluation/attendance data visualization)"
+  },
+  "main_agent_instructions": {
+    "1": "CRITICAL: The project is strictly JavaScript (.jsx / .js). DO NOT USE TypeScript (.tsx / .ts), despite the user mentioning it. Ensure Shadcn components are initialized in JavaScript.",
+    "2": "MANDATORY: Install required fonts via Google Fonts in index.html or global CSS: Chivo, IBM Plex Sans, IBM Plex Mono.",
+    "3": "MANDATORY: Customize Shadcn UI heavily to match the Neo-Brutalist/Swiss style: radius: 0 (rounded-none), hard solid black borders, drop shadows are solid offsets (e.g. shadow-[4px_4px_0_0_#111111]), not soft blurs.",
+    "4": "MANDATORY: Use pure HTML + Tailwind for complex grid layouts (like the dashboard Control Room grid) instead of wrestling with Shadcn layout components. Only use Shadcn for interactive pieces (Select, DatePicker, Dialog, Tabs).",
+    "5": "MANDATORY: Every key interactive element MUST have a `data-testid` attribute (kebab-case, role-based, e.g., `data-testid=\"login-submit-button\"`).",
+    "6": "MANDATORY: Ensure high contrast text on all active/hover states. Do NOT rely on Tailwind's default soft colors. If a button is hovered, change text color explicitly to maintain WCAG AA contrast.",
+    "7": "Do not leave generic empty state placeholders. Use the provided image URLs (like 'empty_state_students') for empty data views."
+  }
+}
