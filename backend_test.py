@@ -235,6 +235,124 @@ class NEMSAPITester:
             self.log_result("Grievance Creation", False, f"Status: {status}, Response: {response}")
             return False
 
+    def test_crud_operations(self):
+        """Test CRUD operations for admin modules"""
+        print("\n🔧 Testing CRUD Operations...")
+        
+        # Get initial data for testing
+        students_success, _, students = self.make_request('GET', 'api/students', token=self.admin_token)
+        exams_success, _, exams = self.make_request('GET', 'api/exams', token=self.admin_token)
+        centers_success, _, centers = self.make_request('GET', 'api/exam-centers', token=self.admin_token)
+        rooms_success, _, rooms = self.make_request('GET', 'api/rooms', token=self.admin_token)
+        schedules_success, _, schedules = self.make_request('GET', 'api/schedules', token=self.admin_token)
+        
+        if not all([students_success, exams_success, centers_success, rooms_success, schedules_success]):
+            self.log_result("Get initial data for CRUD", False, "Failed to fetch required data")
+            return
+        
+        if not all([students, exams, centers, rooms, schedules]):
+            self.log_result("Verify initial data exists", False, "Missing required test data")
+            return
+        
+        student_id = students[0]['id']
+        exam_id = exams[0]['id']
+        center_id = centers[0]['id']
+        room_id = rooms[0]['id']
+        schedule_id = schedules[0]['id']
+        
+        print(f"Using test IDs: Student={student_id[:8]}..., Exam={exam_id[:8]}..., Schedule={schedule_id[:8]}...")
+        
+        # Test Students UPDATE (Edit functionality)
+        print("\n📚 Testing Students CRUD...")
+        update_data = {"fullName": "Updated Test Student", "city": "Updated City", "gender": "Male"}
+        success, status, _ = self.make_request('PUT', f'api/students/{student_id}', 
+                                             data=update_data, token=self.admin_token)
+        self.log_result("Update Student (Edit)", success, f"Status: {status}")
+        
+        # Test Students DELETE (but don't actually delete to preserve test data)
+        # We'll test with a non-existent ID to verify the endpoint works
+        success, status, _ = self.make_request('DELETE', f'api/students/nonexistent123', 
+                                             token=self.admin_token, expected_status=404)
+        self.log_result("Delete Student endpoint", success, f"Status: {status}")
+        
+        # Test Exams CREATE and DELETE
+        print("\n📝 Testing Exams CRUD...")
+        exam_data = {
+            "examCode": f"TEST{int(datetime.now().timestamp())}",
+            "examName": "Test Exam CRUD",
+            "level": "National",
+            "durationMinutes": 120,
+            "description": "Test exam for CRUD operations"
+        }
+        success, status, response = self.make_request('POST', 'api/exams', 
+                                                    data=exam_data, token=self.admin_token)
+        self.log_result("Create Exam", success, f"Status: {status}")
+        
+        if success and 'id' in response:
+            new_exam_id = response['id']
+            success, status, _ = self.make_request('DELETE', f'api/exams/{new_exam_id}', 
+                                                 token=self.admin_token)
+            self.log_result("Delete Exam", success, f"Status: {status}")
+        
+        # Test Schedules CREATE and DELETE
+        print("\n📅 Testing Schedules CRUD...")
+        schedule_data = {
+            "examId": exam_id,
+            "centerId": center_id,
+            "examDate": "2024-12-25",
+            "startTime": "10:00",
+            "endTime": "13:00",
+            "subject": "Test Subject CRUD"
+        }
+        success, status, response = self.make_request('POST', 'api/schedules', 
+                                                    data=schedule_data, token=self.admin_token)
+        self.log_result("Create Schedule", success, f"Status: {status}")
+        
+        if success and 'id' in response:
+            new_schedule_id = response['id']
+            success, status, _ = self.make_request('DELETE', f'api/schedules/{new_schedule_id}', 
+                                                 token=self.admin_token)
+            self.log_result("Delete Schedule", success, f"Status: {status}")
+        
+        # Test Seat Allocations CREATE and DELETE
+        print("\n🪑 Testing Seat Allocations CRUD...")
+        alloc_data = {
+            "scheduleId": schedule_id,
+            "studentId": student_id,
+            "roomId": room_id,
+            "seatNumber": f"TEST{int(datetime.now().timestamp() % 1000)}"
+        }
+        success, status, response = self.make_request('POST', 'api/seat-allocations', 
+                                                    data=alloc_data, token=self.admin_token)
+        self.log_result("Create Seat Allocation", success, f"Status: {status}")
+        
+        if success and 'id' in response:
+            new_alloc_id = response['id']
+            success, status, _ = self.make_request('DELETE', f'api/seat-allocations/{new_alloc_id}', 
+                                                 token=self.admin_token)
+            self.log_result("Delete Seat Allocation", success, f"Status: {status}")
+        
+        # Test Results CREATE and DELETE
+        print("\n🏆 Testing Results CRUD...")
+        result_data = {
+            "studentId": student_id,
+            "examId": exam_id,
+            "totalMarks": 100,
+            "marksObtained": 85,
+            "grade": "A",
+            "status": "PASS",
+            "rank": 10
+        }
+        success, status, response = self.make_request('POST', 'api/results', 
+                                                    data=result_data, token=self.admin_token)
+        self.log_result("Create Result", success, f"Status: {status}")
+        
+        if success and 'id' in response:
+            new_result_id = response['id']
+            success, status, _ = self.make_request('DELETE', f'api/results/{new_result_id}', 
+                                                 token=self.admin_token)
+            self.log_result("Delete Result", success, f"Status: {status}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting NEMS Backend API Tests")
@@ -274,6 +392,10 @@ class NEMSAPITester:
         # Functional tests
         if student_login_success:
             self.test_grievance_creation()
+        
+        # CRUD operations tests (require admin token)
+        if admin_login_success:
+            self.test_crud_operations()
         
         return self.generate_report()
 

@@ -99,6 +99,47 @@ class GrievanceRequest(BaseModel):
     category: str
     description: str
 
+class StudentUpdateRequest(BaseModel):
+    fullName: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    dateOfBirth: Optional[str] = None
+    gender: Optional[str] = None
+    category: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    address: Optional[str] = None
+
+class ExamRequest(BaseModel):
+    examCode: str
+    examName: str
+    level: Optional[str] = "National"
+    durationMinutes: Optional[int] = 180
+    description: Optional[str] = ""
+
+class ScheduleRequest(BaseModel):
+    examId: str
+    centerId: str
+    examDate: str
+    startTime: str
+    endTime: str
+    subject: str
+
+class RoomAssignRequest(BaseModel):
+    scheduleId: str
+    studentId: str
+    roomId: str
+    seatNumber: str
+
+class ResultRequest(BaseModel):
+    studentId: str
+    examId: str
+    totalMarks: int
+    marksObtained: int
+    grade: str
+    status: str
+    rank: Optional[int] = None
+
 # ============ SEED DATA ============
 def seed_data():
     # Only seed if empty
@@ -571,3 +612,155 @@ def get_dashboard_stats():
         "malpracticeReports": malpractice_col.count_documents({}),
         "payments": payments_col.count_documents({})
     }
+
+# ============ ADMIN CRUD OPERATIONS ============
+
+# --- Students CRUD ---
+@app.put("/api/students/{doc_id}")
+def update_student(doc_id: str, req: StudentUpdateRequest):
+    update_data = {k: v for k, v in req.dict().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = students_col.update_one({"_id": ObjectId(doc_id)}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Student not found")
+    # Also update user fullName/email if changed
+    student = students_col.find_one({"_id": ObjectId(doc_id)})
+    if student and student.get("userId"):
+        user_update = {}
+        if req.fullName:
+            user_update["fullName"] = req.fullName
+        if req.email:
+            user_update["email"] = req.email
+        if user_update:
+            users_col.update_one({"_id": ObjectId(student["userId"])}, {"$set": user_update})
+    return {"message": "Student updated successfully"}
+
+@app.delete("/api/students/{doc_id}")
+def delete_student(doc_id: str):
+    student = students_col.find_one({"_id": ObjectId(doc_id)})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    students_col.delete_one({"_id": ObjectId(doc_id)})
+    if student.get("userId"):
+        users_col.delete_one({"_id": ObjectId(student["userId"])})
+    return {"message": "Student deleted successfully"}
+
+# --- Exams CRUD ---
+@app.post("/api/exams")
+def create_exam(req: ExamRequest):
+    exam = {
+        "examCode": req.examCode, "examName": req.examName,
+        "level": req.level, "durationMinutes": req.durationMinutes,
+        "description": req.description, "active": True
+    }
+    result = exams_col.insert_one(exam)
+    exam["id"] = str(result.inserted_id)
+    exam.pop("_id", None)
+    return exam
+
+@app.put("/api/exams/{doc_id}")
+def update_exam(doc_id: str, req: ExamRequest):
+    update_data = {k: v for k, v in req.dict().items() if v is not None}
+    result = exams_col.update_one({"_id": ObjectId(doc_id)}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    return {"message": "Exam updated successfully"}
+
+@app.delete("/api/exams/{doc_id}")
+def delete_exam(doc_id: str):
+    result = exams_col.delete_one({"_id": ObjectId(doc_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    return {"message": "Exam deleted successfully"}
+
+# --- Schedules CRUD ---
+@app.post("/api/schedules")
+def create_schedule(req: ScheduleRequest):
+    exam = exams_col.find_one({"_id": ObjectId(req.examId)})
+    center = exam_centers_col.find_one({"_id": ObjectId(req.centerId)})
+    schedule = {
+        "examId": req.examId, "examName": exam["examName"] if exam else "Unknown",
+        "centerId": req.centerId, "centerName": center["centerName"] if center else "Unknown",
+        "examDate": req.examDate, "startTime": req.startTime, "endTime": req.endTime,
+        "subject": req.subject, "active": True
+    }
+    result = schedules_col.insert_one(schedule)
+    schedule["id"] = str(result.inserted_id)
+    schedule.pop("_id", None)
+    return schedule
+
+@app.delete("/api/schedules/{doc_id}")
+def delete_schedule(doc_id: str):
+    result = schedules_col.delete_one({"_id": ObjectId(doc_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return {"message": "Schedule deleted successfully"}
+
+# --- Seat Allocations CRUD ---
+@app.post("/api/seat-allocations")
+def create_seat_allocation(req: RoomAssignRequest):
+    student = students_col.find_one({"_id": ObjectId(req.studentId)})
+    schedule = schedules_col.find_one({"_id": ObjectId(req.scheduleId)})
+    room = rooms_col.find_one({"_id": ObjectId(req.roomId)})
+    alloc = {
+        "scheduleId": req.scheduleId,
+        "examName": schedule["examName"] if schedule else "Unknown",
+        "examDate": schedule["examDate"] if schedule else "",
+        "startTime": schedule["startTime"] if schedule else "",
+        "endTime": schedule["endTime"] if schedule else "",
+        "subject": schedule["subject"] if schedule else "",
+        "studentId": req.studentId,
+        "studentName": student["fullName"] if student else "Unknown",
+        "roomId": req.roomId,
+        "roomNumber": room["roomNumber"] if room else "Unknown",
+        "centerName": room["centerName"] if room else "Unknown",
+        "seatNumber": req.seatNumber
+    }
+    result = seat_allocations_col.insert_one(alloc)
+    alloc["id"] = str(result.inserted_id)
+    alloc.pop("_id", None)
+    return alloc
+
+@app.delete("/api/seat-allocations/{doc_id}")
+def delete_seat_allocation(doc_id: str):
+    result = seat_allocations_col.delete_one({"_id": ObjectId(doc_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Allocation not found")
+    return {"message": "Allocation deleted successfully"}
+
+# --- Results CRUD ---
+@app.post("/api/results")
+def create_result(req: ResultRequest):
+    student = students_col.find_one({"_id": ObjectId(req.studentId)})
+    exam = exams_col.find_one({"_id": ObjectId(req.examId)})
+    pct = round((req.marksObtained / req.totalMarks) * 100, 2) if req.totalMarks > 0 else 0
+    r = {
+        "studentId": req.studentId, "studentName": student["fullName"] if student else "Unknown",
+        "examId": req.examId, "examName": exam["examName"] if exam else "Unknown",
+        "totalMarks": req.totalMarks, "marksObtained": req.marksObtained,
+        "percentage": pct, "grade": req.grade, "status": req.status,
+        "rank": req.rank, "publishedAt": datetime.now(timezone.utc).isoformat()
+    }
+    result = results_col.insert_one(r)
+    r["id"] = str(result.inserted_id)
+    r.pop("_id", None)
+    return r
+
+@app.delete("/api/results/{doc_id}")
+def delete_result(doc_id: str):
+    result = results_col.delete_one({"_id": ObjectId(doc_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Result not found")
+    return {"message": "Result deleted successfully"}
+
+# --- Grievance Update ---
+@app.put("/api/grievances/{doc_id}/resolve")
+def resolve_grievance(doc_id: str):
+    result = grievances_col.update_one(
+        {"_id": ObjectId(doc_id)},
+        {"$set": {"status": "RESOLVED", "resolution": "Resolved by admin", "resolvedAt": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Grievance not found")
+    return {"message": "Grievance resolved"}

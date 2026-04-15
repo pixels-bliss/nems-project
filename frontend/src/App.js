@@ -318,26 +318,61 @@ function AdminDashboard({ user, onLogout }) {
 /* ============ MANAGE STUDENTS ============ */
 function ManageStudentsPage({ user, onLogout }) {
   const [students, setStudents] = useState([]); const [loading, setLoading] = useState(true); const [search, setSearch] = useState('');
-  useEffect(() => { api.get('/api/students').then(r=>setStudents(r.data)).catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const [editId, setEditId] = useState(null); const [editForm, setEditForm] = useState({});
+  const [message, setMessage] = useState('');
+  const reload = () => api.get('/api/students').then(r=>setStudents(r.data)).catch(()=>{});
+  useEffect(() => { reload().finally(()=>setLoading(false)); }, []);
   const filtered = students.filter(s=>(s.fullName||'').toLowerCase().includes(search.toLowerCase())||(s.studentId||'').toLowerCase().includes(search.toLowerCase()));
+
+  const handleEdit = (s) => { setEditId(s.id); setEditForm({fullName:s.fullName||'',email:s.email||'',gender:s.gender||'',category:s.category||'',city:s.city||''}); };
+  const handleSave = async () => {
+    try { await api.put(`/api/students/${editId}`, editForm); setMessage('Student updated!'); setEditId(null); reload(); }
+    catch(e) { setMessage('Update failed: ' + (e.response?.data?.detail || '')); }
+  };
+  const handleDelete = async (id) => {
+    if(!window.confirm('Delete this student?')) return;
+    try { await api.delete(`/api/students/${id}`); setMessage('Student deleted'); reload(); }
+    catch(e) { setMessage('Delete failed'); }
+  };
+
   return (
     <div className="flex min-h-screen"><Sidebar role="ADMIN" fullName={user.fullName} onLogout={onLogout} />
       <main className="flex-1 p-8" data-testid="manage-students-page">
         <p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p>
         <h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Manage Students</h1>
         <div className="w-16 h-1 bg-[#E53E3E] mt-3 mb-8"></div>
+        {message && <div className="border border-[#38A169] bg-green-50 p-4 mb-4" data-testid="student-message"><p className="text-sm text-[#38A169] font-bold">{message}</p><button onClick={()=>setMessage('')} className="text-xs underline mt-1">dismiss</button></div>}
         <div className="mb-6"><input data-testid="student-search-input" type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name or ID..." className="w-full max-w-md px-4 py-3 border border-[#111111] bg-white font-body" /></div>
         <p className="text-sm text-[#555555] mb-4">Showing <span className="font-bold text-[#111111]">{filtered.length}</span> students</p>
         {loading ? <p>Loading...</p> :
         <div className="border border-[#111111] overflow-x-auto" data-testid="students-table">
           <table className="w-full border-collapse text-left"><thead><tr className="border-b-2 border-[#111111]">
-            {['ID','Name','Email','DOB','Gender','Category','City'].map(h=><th key={h} className="py-4 px-4 text-xs tracking-[0.1em] font-bold text-[#555555] uppercase">{h}</th>)}
+            {['ID','Name','Email','Gender','Category','City','Actions'].map(h=><th key={h} className="py-4 px-4 text-xs tracking-[0.1em] font-bold text-[#555555] uppercase">{h}</th>)}
           </tr></thead><tbody>{filtered.map(s=>(
             <tr key={s.id} className="border-b border-[#E5E5E5] hover:bg-[#F7F7F7]">
-              <td className="py-4 px-4 font-mono text-sm">{s.studentId}</td><td className="py-4 px-4 text-sm font-medium">{s.fullName}</td>
-              <td className="py-4 px-4 text-sm text-[#555555]">{s.email}</td><td className="py-4 px-4 text-sm">{s.dateOfBirth}</td>
-              <td className="py-4 px-4 text-sm">{s.gender}</td><td className="py-4 px-4"><span className="inline-block px-2 py-1 text-xs font-bold border border-[#111111]">{s.category}</span></td>
-              <td className="py-4 px-4 text-sm">{s.city}</td>
+              {editId === s.id ? (<>
+                <td className="py-3 px-4 font-mono text-sm">{s.studentId}</td>
+                <td className="py-3 px-4"><input value={editForm.fullName} onChange={e=>setEditForm({...editForm,fullName:e.target.value})} className="w-full px-2 py-1 border border-[#111111] text-sm" /></td>
+                <td className="py-3 px-4"><input value={editForm.email} onChange={e=>setEditForm({...editForm,email:e.target.value})} className="w-full px-2 py-1 border border-[#111111] text-sm" /></td>
+                <td className="py-3 px-4"><select value={editForm.gender} onChange={e=>setEditForm({...editForm,gender:e.target.value})} className="px-2 py-1 border border-[#111111] text-sm"><option>Male</option><option>Female</option><option>Other</option></select></td>
+                <td className="py-3 px-4"><select value={editForm.category} onChange={e=>setEditForm({...editForm,category:e.target.value})} className="px-2 py-1 border border-[#111111] text-sm"><option>GEN</option><option>OBC</option><option>SC</option><option>ST</option></select></td>
+                <td className="py-3 px-4"><input value={editForm.city} onChange={e=>setEditForm({...editForm,city:e.target.value})} className="w-full px-2 py-1 border border-[#111111] text-sm" /></td>
+                <td className="py-3 px-4 flex gap-2">
+                  <button data-testid={`save-student-${s.id}`} onClick={handleSave} className="px-3 py-1 bg-[#38A169] text-white text-xs font-bold uppercase">Save</button>
+                  <button onClick={()=>setEditId(null)} className="px-3 py-1 border border-[#111111] text-xs font-bold uppercase">Cancel</button>
+                </td>
+              </>) : (<>
+                <td className="py-4 px-4 font-mono text-sm">{s.studentId}</td>
+                <td className="py-4 px-4 text-sm font-medium">{s.fullName}</td>
+                <td className="py-4 px-4 text-sm text-[#555555]">{s.email}</td>
+                <td className="py-4 px-4 text-sm">{s.gender}</td>
+                <td className="py-4 px-4"><span className="inline-block px-2 py-1 text-xs font-bold border border-[#111111]">{s.category}</span></td>
+                <td className="py-4 px-4 text-sm">{s.city}</td>
+                <td className="py-4 px-4 flex gap-2">
+                  <button data-testid={`edit-student-${s.id}`} onClick={()=>handleEdit(s)} className="px-3 py-1 bg-[#3182CE] text-white text-xs font-bold uppercase">Edit</button>
+                  <button data-testid={`delete-student-${s.id}`} onClick={()=>handleDelete(s.id)} className="px-3 py-1 bg-[#E53E3E] text-white text-xs font-bold uppercase">Del</button>
+                </td>
+              </>)}
             </tr>
           ))}</tbody></table>
         </div>}
@@ -348,23 +383,54 @@ function ManageStudentsPage({ user, onLogout }) {
 
 /* ============ SCHEDULE EXAMS ============ */
 function ScheduleExamsPage({ user, onLogout }) {
-  const [schedules, setSchedules] = useState([]); const [loading, setLoading] = useState(true);
-  useEffect(() => { api.get('/api/schedules').then(r=>setSchedules(r.data)).catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const [schedules, setSchedules] = useState([]); const [exams, setExams] = useState([]); const [centers, setCenters] = useState([]);
+  const [loading, setLoading] = useState(true); const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({examId:'',centerId:'',examDate:'',startTime:'09:00',endTime:'12:00',subject:''});
+  const [message, setMessage] = useState('');
+  const reload = () => Promise.all([api.get('/api/schedules'),api.get('/api/exams'),api.get('/api/exam-centers')]).then(([s,e,c])=>{setSchedules(s.data);setExams(e.data);setCenters(c.data);});
+  useEffect(() => { reload().catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try { await api.post('/api/schedules', form); setMessage('Schedule created!'); setShowForm(false); setForm({examId:'',centerId:'',examDate:'',startTime:'09:00',endTime:'12:00',subject:''}); reload(); }
+    catch(err) { setMessage('Failed: ' + (err.response?.data?.detail || '')); }
+  };
+  const handleDelete = async (id) => {
+    if(!window.confirm('Delete this schedule?')) return;
+    try { await api.delete(`/api/schedules/${id}`); setMessage('Schedule deleted'); reload(); }
+    catch(e) { setMessage('Delete failed'); }
+  };
   return (
     <div className="flex min-h-screen"><Sidebar role="ADMIN" fullName={user.fullName} onLogout={onLogout} />
       <main className="flex-1 p-8" data-testid="schedule-exams-page">
-        <p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p>
-        <h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Schedule Exams</h1>
-        <div className="w-16 h-1 bg-[#E53E3E] mt-3 mb-8"></div>
+        <div className="flex justify-between items-start mb-8">
+          <div><p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p><h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Schedule Exams</h1><div className="w-16 h-1 bg-[#E53E3E] mt-3"></div></div>
+          <button data-testid="new-schedule-button" onClick={()=>setShowForm(!showForm)} className="px-6 py-3 bg-[#111111] text-white font-bold text-sm tracking-wider uppercase border border-[#111111] hover:bg-[#333333] shadow-[4px_4px_0_0_#E53E3E]">{showForm?'Cancel':'+ New Schedule'}</button>
+        </div>
+        {message && <div className="border border-[#38A169] bg-green-50 p-4 mb-4"><p className="text-sm text-[#38A169] font-bold">{message}</p><button onClick={()=>setMessage('')} className="text-xs underline mt-1">dismiss</button></div>}
+        {showForm && <div className="border border-[#111111] p-6 mb-8 bg-white" data-testid="schedule-form">
+          <h3 className="font-heading font-bold text-lg uppercase tracking-wide mb-4">Create Schedule</h3>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Exam</label><select data-testid="schedule-exam-select" value={form.examId} onChange={e=>setForm({...form,examId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{exams.map(ex=><option key={ex.id} value={ex.id}>{ex.examName}</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Center</label><select data-testid="schedule-center-select" value={form.centerId} onChange={e=>setForm({...form,centerId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{centers.map(c=><option key={c.id} value={c.id}>{c.centerName}</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Subject</label><input data-testid="schedule-subject-input" value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" placeholder="Mathematics" required /></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Date</label><input data-testid="schedule-date-input" type="date" value={form.examDate} onChange={e=>setForm({...form,examDate:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required /></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Start</label><input type="time" value={form.startTime} onChange={e=>setForm({...form,startTime:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" /></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">End</label><input type="time" value={form.endTime} onChange={e=>setForm({...form,endTime:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" /></div>
+            </div>
+            <button data-testid="schedule-submit-button" type="submit" className="px-8 py-3 bg-[#111111] text-white font-bold text-sm uppercase shadow-[4px_4px_0_0_#E53E3E]">Create</button>
+          </form>
+        </div>}
         {loading ? <p>Loading...</p> :
         <div className="border border-[#111111] overflow-x-auto" data-testid="schedules-table">
           <table className="w-full border-collapse text-left"><thead><tr className="border-b-2 border-[#111111]">
-            {['Exam','Subject','Date','Time','Center'].map(h=><th key={h} className="py-4 px-4 text-xs tracking-[0.1em] font-bold text-[#555555] uppercase">{h}</th>)}
+            {['Exam','Subject','Date','Time','Center','Actions'].map(h=><th key={h} className="py-4 px-4 text-xs tracking-[0.1em] font-bold text-[#555555] uppercase">{h}</th>)}
           </tr></thead><tbody>{schedules.map(s=>(
             <tr key={s.id} className="border-b border-[#E5E5E5] hover:bg-[#F7F7F7]">
               <td className="py-4 px-4 text-sm font-medium">{s.examName}</td><td className="py-4 px-4 text-sm">{s.subject}</td>
               <td className="py-4 px-4 font-mono text-sm">{s.examDate}</td><td className="py-4 px-4 text-sm">{s.startTime} - {s.endTime}</td>
               <td className="py-4 px-4 text-sm">{s.centerName}</td>
+              <td className="py-4 px-4"><button data-testid={`delete-schedule-${s.id}`} onClick={()=>handleDelete(s.id)} className="px-3 py-1 bg-[#E53E3E] text-white text-xs font-bold uppercase">Delete</button></td>
             </tr>
           ))}</tbody></table>
         </div>}
@@ -375,15 +441,44 @@ function ScheduleExamsPage({ user, onLogout }) {
 
 /* ============ ASSIGN ROOMS ============ */
 function AssignRoomsPage({ user, onLogout }) {
-  const [rooms, setRooms] = useState([]); const [allocs, setAllocs] = useState([]); const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('rooms');
-  useEffect(() => { Promise.all([api.get('/api/rooms'),api.get('/api/seat-allocations')]).then(([r,a])=>{setRooms(r.data);setAllocs(a.data);}).catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const [rooms, setRooms] = useState([]); const [allocs, setAllocs] = useState([]); const [students, setStudents] = useState([]);
+  const [schedules, setSchedules] = useState([]); const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('rooms'); const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({scheduleId:'',studentId:'',roomId:'',seatNumber:''});
+  const [message, setMessage] = useState('');
+  const reload = () => Promise.all([api.get('/api/rooms'),api.get('/api/seat-allocations'),api.get('/api/students'),api.get('/api/schedules')])
+    .then(([r,a,s,sc])=>{setRooms(r.data);setAllocs(a.data);setStudents(s.data);setSchedules(sc.data);});
+  useEffect(() => { reload().catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try { await api.post('/api/seat-allocations', form); setMessage('Seat assigned!'); setShowForm(false); setForm({scheduleId:'',studentId:'',roomId:'',seatNumber:''}); reload(); }
+    catch(err) { setMessage('Failed: ' + (err.response?.data?.detail || '')); }
+  };
+  const handleDelete = async (id) => {
+    if(!window.confirm('Remove this allocation?')) return;
+    try { await api.delete(`/api/seat-allocations/${id}`); setMessage('Allocation removed'); reload(); }
+    catch(e) { setMessage('Delete failed'); }
+  };
   return (
     <div className="flex min-h-screen"><Sidebar role="ADMIN" fullName={user.fullName} onLogout={onLogout} />
       <main className="flex-1 p-8" data-testid="assign-rooms-page">
-        <p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p>
-        <h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Assign Rooms</h1>
-        <div className="w-16 h-1 bg-[#E53E3E] mt-3 mb-8"></div>
+        <div className="flex justify-between items-start mb-8">
+          <div><p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p><h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Assign Rooms</h1><div className="w-16 h-1 bg-[#E53E3E] mt-3"></div></div>
+          <button data-testid="new-allocation-button" onClick={()=>{setShowForm(!showForm);setTab('allocations');}} className="px-6 py-3 bg-[#111111] text-white font-bold text-sm tracking-wider uppercase border border-[#111111] hover:bg-[#333333] shadow-[4px_4px_0_0_#E53E3E]">{showForm?'Cancel':'+ Assign Seat'}</button>
+        </div>
+        {message && <div className="border border-[#38A169] bg-green-50 p-4 mb-4"><p className="text-sm text-[#38A169] font-bold">{message}</p><button onClick={()=>setMessage('')} className="text-xs underline mt-1">dismiss</button></div>}
+        {showForm && <div className="border border-[#111111] p-6 mb-6 bg-white" data-testid="allocation-form">
+          <h3 className="font-heading font-bold text-lg uppercase tracking-wide mb-4">Assign Seat</h3>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Schedule</label><select data-testid="alloc-schedule-select" value={form.scheduleId} onChange={e=>setForm({...form,scheduleId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{schedules.map(s=><option key={s.id} value={s.id}>{s.examName} - {s.subject} ({s.examDate})</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Student</label><select data-testid="alloc-student-select" value={form.studentId} onChange={e=>setForm({...form,studentId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{students.map(s=><option key={s.id} value={s.id}>{s.fullName} ({s.studentId})</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Room</label><select data-testid="alloc-room-select" value={form.roomId} onChange={e=>setForm({...form,roomId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{rooms.map(r=><option key={r.id} value={r.id}>Room {r.roomNumber} - {r.centerName} (Cap: {r.capacity})</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Seat Number</label><input data-testid="alloc-seat-input" value={form.seatNumber} onChange={e=>setForm({...form,seatNumber:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" placeholder="S011" required /></div>
+            </div>
+            <button data-testid="alloc-submit-button" type="submit" className="px-8 py-3 bg-[#111111] text-white font-bold text-sm uppercase shadow-[4px_4px_0_0_#E53E3E]">Assign</button>
+          </form>
+        </div>}
         <div className="flex border-b-2 border-[#111111] mb-6">
           <button data-testid="rooms-tab" onClick={()=>setTab('rooms')} className={`px-6 py-3 text-sm font-bold uppercase tracking-wider ${tab==='rooms'?'bg-[#111111] text-white':'text-[#555555] hover:text-[#111111]'}`}>Rooms ({rooms.length})</button>
           <button data-testid="allocations-tab" onClick={()=>setTab('allocations')} className={`px-6 py-3 text-sm font-bold uppercase tracking-wider ${tab==='allocations'?'bg-[#111111] text-white':'text-[#555555] hover:text-[#111111]'}`}>Allocations ({allocs.length})</button>
@@ -400,12 +495,13 @@ function AssignRoomsPage({ user, onLogout }) {
         ))}</div> :
         <div className="border border-[#111111] overflow-x-auto" data-testid="allocations-table">
           <table className="w-full border-collapse text-left"><thead><tr className="border-b-2 border-[#111111]">
-            {['Student','Exam','Room','Seat','Center'].map(h=><th key={h} className="py-4 px-4 text-xs font-bold text-[#555555] uppercase">{h}</th>)}
+            {['Student','Exam','Room','Seat','Center','Actions'].map(h=><th key={h} className="py-4 px-4 text-xs font-bold text-[#555555] uppercase">{h}</th>)}
           </tr></thead><tbody>{allocs.map(a=>(
             <tr key={a.id} className="border-b border-[#E5E5E5] hover:bg-[#F7F7F7]">
               <td className="py-4 px-4 text-sm font-medium">{a.studentName}</td><td className="py-4 px-4 text-sm">{a.examName}</td>
               <td className="py-4 px-4 font-mono text-sm">{a.roomNumber}</td><td className="py-4 px-4 font-heading font-bold text-[#E53E3E]">{a.seatNumber}</td>
               <td className="py-4 px-4 text-sm">{a.centerName}</td>
+              <td className="py-4 px-4"><button data-testid={`delete-alloc-${a.id}`} onClick={()=>handleDelete(a.id)} className="px-3 py-1 bg-[#E53E3E] text-white text-xs font-bold uppercase">Remove</button></td>
             </tr>
           ))}</tbody></table>
         </div>}
@@ -416,33 +512,65 @@ function AssignRoomsPage({ user, onLogout }) {
 
 /* ============ PUBLISH RESULTS ============ */
 function PublishResultsPage({ user, onLogout }) {
-  const [results, setResults] = useState([]); const [loading, setLoading] = useState(true);
-  useEffect(() => { api.get('/api/results').then(r=>setResults(r.data)).catch(()=>{}).finally(()=>setLoading(false)); }, []);
+  const [results, setResults] = useState([]); const [students, setStudents] = useState([]); const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true); const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({studentId:'',examId:'',totalMarks:300,marksObtained:0,grade:'A',status:'PASS',rank:null});
+  const [message, setMessage] = useState('');
+  const reload = () => Promise.all([api.get('/api/results'),api.get('/api/students'),api.get('/api/exams')]).then(([r,s,e])=>{setResults(r.data);setStudents(s.data);setExams(e.data);});
+  useEffect(() => { reload().catch(()=>{}).finally(()=>setLoading(false)); }, []);
   const pass = results.filter(r=>r.status==='PASS').length; const fail = results.filter(r=>r.status==='FAIL').length;
   const avg = results.length ? (results.reduce((s,r)=>s+(r.percentage||0),0)/results.length).toFixed(1) : '0';
   const gc = (g) => { if(g==='A+'||g==='A')return'text-[#38A169]';if(g==='A-'||g==='B+')return'text-[#3182CE]';if(g==='F')return'text-[#E53E3E]';return'text-[#D69E2E]'; };
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try { await api.post('/api/results', {...form, rank: form.rank ? parseInt(form.rank) : null}); setMessage('Result published!'); setShowForm(false); reload(); }
+    catch(err) { setMessage('Failed: ' + (err.response?.data?.detail || '')); }
+  };
+  const handleDelete = async (id) => {
+    if(!window.confirm('Delete this result?')) return;
+    try { await api.delete(`/api/results/${id}`); setMessage('Result deleted'); reload(); }
+    catch(e) { setMessage('Delete failed'); }
+  };
   return (
     <div className="flex min-h-screen"><Sidebar role="ADMIN" fullName={user.fullName} onLogout={onLogout} />
       <main className="flex-1 p-8" data-testid="publish-results-page">
-        <p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p>
-        <h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Publish Results</h1>
-        <div className="w-16 h-1 bg-[#E53E3E] mt-3 mb-8"></div>
+        <div className="flex justify-between items-start mb-8">
+          <div><p className="text-xs tracking-[0.2em] text-[#555555] uppercase font-bold">Admin Panel</p><h1 className="font-heading font-black text-4xl tracking-tighter uppercase mt-1">Publish Results</h1><div className="w-16 h-1 bg-[#E53E3E] mt-3"></div></div>
+          <button data-testid="new-result-button" onClick={()=>setShowForm(!showForm)} className="px-6 py-3 bg-[#111111] text-white font-bold text-sm tracking-wider uppercase border border-[#111111] hover:bg-[#333333] shadow-[4px_4px_0_0_#E53E3E]">{showForm?'Cancel':'+ Publish Result'}</button>
+        </div>
+        {message && <div className="border border-[#38A169] bg-green-50 p-4 mb-4"><p className="text-sm text-[#38A169] font-bold">{message}</p><button onClick={()=>setMessage('')} className="text-xs underline mt-1">dismiss</button></div>}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" data-testid="results-stats">
           <div className="border border-[#111111] p-5 bg-white"><p className="text-xs text-[#888888] uppercase">Total</p><p className="font-heading font-black text-3xl mt-2">{results.length}</p></div>
           <div className="border border-[#111111] p-5 bg-white"><p className="text-xs text-[#888888] uppercase">Passed</p><p className="font-heading font-black text-3xl mt-2 text-[#38A169]">{pass}</p></div>
           <div className="border border-[#111111] p-5 bg-white"><p className="text-xs text-[#888888] uppercase">Failed</p><p className="font-heading font-black text-3xl mt-2 text-[#E53E3E]">{fail}</p></div>
           <div className="border border-[#111111] p-5 bg-white"><p className="text-xs text-[#888888] uppercase">Avg %</p><p className="font-heading font-black text-3xl mt-2 text-[#3182CE]">{avg}%</p></div>
         </div>
+        {showForm && <div className="border border-[#111111] p-6 mb-8 bg-white" data-testid="result-form">
+          <h3 className="font-heading font-bold text-lg uppercase tracking-wide mb-4">Publish New Result</h3>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Student</label><select data-testid="result-student-select" value={form.studentId} onChange={e=>setForm({...form,studentId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{students.map(s=><option key={s.id} value={s.id}>{s.fullName} ({s.studentId})</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Exam</label><select data-testid="result-exam-select" value={form.examId} onChange={e=>setForm({...form,examId:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" required><option value="">Select</option>{exams.map(ex=><option key={ex.id} value={ex.id}>{ex.examName}</option>)}</select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Total Marks</label><input type="number" value={form.totalMarks} onChange={e=>setForm({...form,totalMarks:parseInt(e.target.value)})} className="w-full px-4 py-3 border border-[#111111] bg-white" required /></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Marks Obtained</label><input data-testid="result-marks-input" type="number" value={form.marksObtained} onChange={e=>setForm({...form,marksObtained:parseInt(e.target.value)})} className="w-full px-4 py-3 border border-[#111111] bg-white" required /></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Grade</label><select value={form.grade} onChange={e=>setForm({...form,grade:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white"><option>A+</option><option>A</option><option>A-</option><option>B+</option><option>B</option><option>B-</option><option>C</option><option>F</option></select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Status</label><select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white"><option>PASS</option><option>FAIL</option></select></div>
+              <div><label className="block text-xs font-bold text-[#555555] uppercase mb-1">Rank (optional)</label><input type="number" value={form.rank||''} onChange={e=>setForm({...form,rank:e.target.value})} className="w-full px-4 py-3 border border-[#111111] bg-white" placeholder="e.g. 5" /></div>
+            </div>
+            <button data-testid="result-submit-button" type="submit" className="px-8 py-3 bg-[#111111] text-white font-bold text-sm uppercase shadow-[4px_4px_0_0_#E53E3E]">Publish</button>
+          </form>
+        </div>}
         {loading ? <p>Loading...</p> :
         <div className="border border-[#111111] overflow-x-auto" data-testid="admin-results-table">
           <table className="w-full border-collapse text-left"><thead><tr className="border-b-2 border-[#111111]">
-            {['Rank','Student','Exam','Marks','%','Grade','Status'].map(h=><th key={h} className="py-4 px-4 text-xs font-bold text-[#555555] uppercase">{h}</th>)}
+            {['Rank','Student','Exam','Marks','%','Grade','Status','Actions'].map(h=><th key={h} className="py-4 px-4 text-xs font-bold text-[#555555] uppercase">{h}</th>)}
           </tr></thead><tbody>{results.sort((a,b)=>(a.rank||999)-(b.rank||999)).map(r=>(
             <tr key={r.id} className="border-b border-[#E5E5E5] hover:bg-[#F7F7F7]">
               <td className="py-4 px-4 font-heading font-bold">{r.rank||'-'}</td><td className="py-4 px-4 text-sm font-medium">{r.studentName}</td>
               <td className="py-4 px-4 text-sm">{r.examName}</td><td className="py-4 px-4 font-mono text-sm">{r.marksObtained}/{r.totalMarks}</td>
               <td className="py-4 px-4 font-bold text-sm">{r.percentage}%</td><td className={`py-4 px-4 font-heading font-bold text-lg ${gc(r.grade)}`}>{r.grade}</td>
               <td className="py-4 px-4"><span className={`inline-block px-3 py-1 text-xs font-bold uppercase border ${r.status==='PASS'?'border-[#38A169] text-[#38A169] bg-green-50':'border-[#E53E3E] text-[#E53E3E] bg-red-50'}`}>{r.status}</span></td>
+              <td className="py-4 px-4"><button data-testid={`delete-result-${r.id}`} onClick={()=>handleDelete(r.id)} className="px-3 py-1 bg-[#E53E3E] text-white text-xs font-bold uppercase">Delete</button></td>
             </tr>
           ))}</tbody></table>
         </div>}
