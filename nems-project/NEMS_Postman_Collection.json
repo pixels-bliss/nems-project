@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "NEMS API Collection",
+    "description": "National Examination Management System - Complete API Collection for all 9 modules",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@nems.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Student",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student1@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register New Student",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newstudent@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"New Student\",\n  \"phone\": \"9876543220\",\n  \"dateOfBirth\": \"2005-06-15\",\n  \"gender\": \"Male\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 1 - Master Reference Data",
+      "item": [
+        {
+          "name": "Get All Regions",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/regions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "regions"]
+            }
+          }
+        },
+        {
+          "name": "Get All Exams",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/exams",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "exams"]
+            }
+          }
+        },
+        {
+          "name": "Create New Exam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"examCode\": \"TEST2024\",\n  \"examName\": \"Test Examination\",\n  \"description\": \"Sample test exam\",\n  \"level\": \"National\",\n  \"durationMinutes\": 120,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/exams",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "exams"]
+            }
+          }
+        },
+        {
+          "name": "Get All Exam Centers",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/exam-centers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "exam-centers"]
+            }
+          }
+        },
+        {
+          "name": "Get All Rooms",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/rooms",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "rooms"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 2 - Student Registration",
+      "item": [
+        {
+          "name": "Get All Students",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students"]
+            }
+          }
+        },
+        {
+          "name": "Get Student By ID",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get All Registrations",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registrations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 3 - Exam Scheduling",
+      "item": [
+        {
+          "name": "Get All Schedules",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules"]
+            }
+          }
+        },
+        {
+          "name": "Get All Seat Allocations",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/seat-allocations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "seat-allocations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 4 - Invigilator Management",
+      "item": [
+        {
+          "name": "Get All Invigilators",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/invigilators",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invigilators"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 5 - Attendance",
+      "item": [
+        {
+          "name": "Get All Attendance",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance Stats",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/attendance/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attendance", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 6 - Evaluation",
+      "item": [
+        {
+          "name": "Get All Evaluators",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluators",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluators"]
+            }
+          }
+        },
+        {
+          "name": "Get All Evaluations",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 7 - Results",
+      "item": [
+        {
+          "name": "Get All Results",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/results",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "results"]
+            }
+          }
+        },
+        {
+          "name": "Get Results By Student",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/results/student/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "results", "student", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 8 - Grievances",
+      "item": [
+        {
+          "name": "Get All Grievances",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/grievances",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "grievances"]
+            }
+          }
+        },
+        {
+          "name": "Resolve Grievance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{authToken}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\"Issue resolved after investigation\""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/grievances/1/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "grievances", "1", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Module 9 - Security & Monitoring",
+      "item": [
+        {
+          "name": "Get All Malpractice Reports",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{authToken}}"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/malpractice-reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "malpractice-reports"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
